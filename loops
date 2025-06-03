@@ -1,0 +1,20 @@
+---
+- name: Add user and group to server
+  hosts: all
+  become: true
+  vars:
+    user-list:
+      - user1
+      - user2
+      - user3
+  tasks:
+  - name: create a group
+    ansible.builtin.group:
+      name: group1
+      state: present
+  - name: create a user
+    ansible.builtin.user:
+      name: "{{item}}"
+      state: present
+      group: group1
+    with_items: user_list
