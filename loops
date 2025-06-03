@@ -1,6 +1,6 @@
 ---
 - name: Add user and group to server
-  hosts: all
+  hosts: webserver
   become: true
   vars:
     user-list:
