@@ -1,0 +1,78 @@
+--- 
+- name: Install and configure tomcat 
+  hosts: webserver 
+  become: true 
+  vars:
+    java_version_amazon:"java-24-amazon-corretto-devel.x86_64"
+    java-version_ubuntu: "default-jdk"
+    tomcat_base_url: "https://archive.apache.org/dist/tomcat" 
+    tomcat_version: "tomcat-10/v10.0.23"
+    tomcat_filename: "apache-tomcat-10.0.23.tar.gz"
+  
+  tasks:
+  - name: update the package in the servers
+  	ansible.builtin.dnf:
+  	  name: "*"
+  	  state: latest 
+  	when: (ansible_facts['distribution']== "amazon")
+  - name: update the package in the servers
+  	ansible.builtin.apt:
+  	  name: "*"
+  	  state: latest 
+  	when: (ansible_facts['distribution']== "ubuntu")
+  - name: install java in amazon
+    ansible.builtin.dnf:
+      name: 
+        - "{{ java_version_amazon }}"
+        - wget
+      state: latest
+    when: (ansible_facts['distribution']== "amazon")
+  - name: install java in ubuntu
+    ansible.builtin.apt:
+      name: 
+        - "{{ java_version_ubuntu }}"
+        - wget
+      state: latest
+    when: (ansible_facts['distribution']== "ubuntu") 
+
+  - name: downloading tomcat from the webserver
+    ansible.builtin.command: wget "{{tomcat_base_url}}/{{tomcat_version}}/bin/{{tomcat_filename}}" -0 /tmp/{{tomcat_filename}}
+    #wget https://archive.apache.org/dist/tomcat/tomcat-10/v10.0.23/bin/apache-tomcat-10.0.23.tar.gz -0 /tmp/apache-tomcat-10.0.23.tar.gz
+  - name: downloading tomcat from the webserver
+    ansible.builtin.shell:
+    cmd: cd/tmp/; tar-xvf apache-tomcat-10*.tar.gz
+  - name: create a group
+    ansible.builtin.group:
+      name: tomcat
+      state: present
+  - name: create a user
+    ansible.builtin.user:
+      name: tomcat
+      state: present
+      group: tomcat
+  - name: copy apache tomcat to /opt/tomcat folder
+    ansible.builtin.copy:
+      src: /tmp/apache-tomcat-10.0.23
+      dest: /opt/tomcat
+      remote_src: true
+      owner: tomcat
+      group: tomcat
+  - name: copy tomcat service file
+  	ansible.builtin.copy:
+  	  src: tomcat.service
+  	  dest: /etc/systemd/system.tomcat.service
+  - name: start tomcat
+    ansible.builtin.service:
+      name: tomcat
+      enabled: yes
+      state: started
+  - name: copy war file to webapps folder
+    ansible.builtin.copy:
+      src: sample.war
+      dest: /opt/tomcat/apache-tomcat-10.0.23/webapps/sample.war
+      owner: tomcat
+      group: tomcat
+  - name: tomcat restart
+    ansible.builtin.service:
+      name: tomcat
+      state: restarted
