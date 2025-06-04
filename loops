@@ -18,3 +18,30 @@
       state: present
       group: group1
     with_items: user_list
+
+-------------------------------------------
+
+#corrected file
+---
+- name: Add user and group to server
+  hosts: webserver
+  become: true
+  vars:
+    user_list:
+      - user1
+      - user2
+      - user3
+
+  tasks:
+    - name: Create group
+      ansible.builtin.group:
+        name: group1
+        state: present
+
+    - name: Create users and add to group
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+        group: group1
+      loop: "{{ user_list }}"    (#it has a small syntax issue in the loop. we're using with_items in a modern playbook, but loop is preferred and more readable)
+
